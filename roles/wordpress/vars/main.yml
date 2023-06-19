@@ -1,0 +1,21 @@
+package_list:
+  - apache2
+  - ghostscript
+  - libapache2-mod-php
+  - mysql-server
+  - php
+  - php-bcmath
+  - php-curl
+  - php-imagick
+  - php-intl
+  - php-json
+  - php-mbstring
+  - php-mysql
+  - php-xml
+  - php-zip
+  - pip
+
+src: wordpress_contents/wordpress/
+dest: /var/www/html/wordpress/
+httpd_port: 80
+config_path: /etc/apache2/sites-available/000-default.conf

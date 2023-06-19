@@ -1,0 +1,92 @@
+---
+- name: Include database variables.
+  include_vars: dbvars.yaml
+  
+- name: "Installation of packages on remote server"
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: false
+  loop: "{{ package_list }}"
+  when: ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['os_family'] == 'Debian'
+  notify: Restart apache service
+
+- name: "Copying  configuration file on ubuntu"
+  ansible.builtin.template:
+    src: apache.conf.j2
+    dest: "{{ config_path }}"
+    mode: 0644
+  when: ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['os_family'] == 'Debian'
+  notify: Restart apache service
+
+- name: installing mysql-server on remote mysql-server
+  ansible.builtin.apt:
+    name: mysql-server
+    state: present
+  when: ansible_facts['distribution'] =='Ubuntu'
+  notify: 
+    - Restart mysql service
+#    - Set the root password
+
+- name: "Set the root password"
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Make sure pymysql is present
+  pip:
+    name: pymysql
+    state: present
+    
+- name: Remove all anonymous user accounts
+  mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    
+- name: Remove the MySQL test database
+  mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+
+- name: Download and unpack latest WordPress
+  unarchive:
+    src: https://wordpress.org/latest.tar.gz
+    dest: /var/www/html/
+    remote_src: yes
+
+- name: Set ownership
+  file:
+    path: "/var/www/html/"
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+
+- name: Creates database for WordPress
+  mysql_db:
+    name: "{{ mysql_db }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"    
+
+- name: Create MySQL user for WordPress
+  mysql_user:
+    name: "{{ mysql_user }}"
+    password: "{{ mysql_password }}"
+    priv: "{{ mysql_db }}.*:ALL"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+      
+- name: Set up wp-config
+  template:
+    src: "wp-config-sample.php.j2"
+    dest: "{{ dest }}/wp-config-sample.php"
+    owner: www-data
+    group: www-data
