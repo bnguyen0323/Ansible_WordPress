@@ -28,11 +28,11 @@
     - Restart mysql service
 #    - Set the root password
 
-- name: "Set the root password"
-  mysql_user:
-    name: root
-    password: "{{ mysql_root_password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
+#- name: "Set the root password"
+#  mysql_user:
+#    name: root
+#    password: "{{ mysql_root_password }}"
+#    login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Make sure pymysql is present
   pip:
